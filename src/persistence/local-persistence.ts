@@ -49,12 +49,6 @@ export class TimeTurtlePersistence {
 class LS_Repo implements Persister {
   #key = "tt_data";
 
-//   constructor() {
-//     if (!window)
-//       throw Error(
-//         "LocalPersistence can only be used in a browser enviromement"
-//       );
-//   }
   save(up: UserPersistence) {
     localStorage.setItem(this.#key, JSON.stringify(up));
   }

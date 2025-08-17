@@ -4,6 +4,9 @@
   --background: #ffffff;
   --foreground: #171717;
   --primary-purple: #4f46e5;
+  --primary-slate: #101828;
+  --secondary-slate: #1e293b;
+  --light-slate: #cbd5e1;
 }
 
 @theme inline {

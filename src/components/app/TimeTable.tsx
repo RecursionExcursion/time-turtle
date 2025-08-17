@@ -10,7 +10,7 @@ export default function TimeTable(props: TimeTableProps) {
   const rows = useMemo(() => [...entries].reverse(), [entries]);
 
   return (
-    <div className="flex-1 overflow-x-auto overflow-y-auto">
+    <div className="flex-1 overflow-x-auto">
       <table className="min-w-full divide-y-2 divide-gray-200 dark:divide-gray-700">
         <thead className="sticky top-0 bg-white ltr:text-left rtl:text-right dark:bg-gray-900">
           <tr className="*:font-medium *:text-gray-900 dark:*:text-white">
