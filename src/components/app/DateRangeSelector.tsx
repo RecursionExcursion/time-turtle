@@ -57,8 +57,8 @@ export default function DateRangeSelector(props: DateRangeSelectorProps) {
   }, [FromCalendarSelector.showSelector]);
 
   return (
-    <div className="flex items-center gap-7">
-      DateFilter:
+    <div className="flex flex-col items-center gap-7">
+      Filter:
       <div className="flex items-center">
         From:
         {FromDatePicker}

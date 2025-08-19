@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { TimeEntry } from "../../models/time-user";
+import { TimeEntry } from "../../lib/time-turtle";
 
 type TimeTableProps = {
   entries: TimeEntry[];

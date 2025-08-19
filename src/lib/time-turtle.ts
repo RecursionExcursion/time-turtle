@@ -1,11 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
-import { generateHmac, validateHmac } from "../service/hmacService";
-import { compress, decompress } from "../service/compressionService";
+import { generateHmac, validateHmac } from "../service/hmac-service";
 
+/* Data Shape */
 export type TimeTurtle = {
   users: User[];
 };
 
+/* User Types */
 export type User = {
   info: UserInfo;
   time: {
@@ -22,96 +23,48 @@ export type TimeEntry = {
   id: string;
   inTime: number;
   outTime?: number;
+  sig: string;
   flags: string[];
 };
 
-export type PersistenceBlob = {
-  id: string;
-  lastAccessed: number;
-  hmac: string;
-  data: string; //compressed payload
-};
-
-export interface Persister {
-  save: (up: PersistenceBlob) => void;
-  read: () => PersistenceBlob | undefined;
-}
-
-export class TimeTurtleRepo {
-  constructor(private readonly persister: Persister) {}
-
-  async read(): Promise<TimeTurtle | undefined> {
-    const persistedUserData = this.persister.read();
-    if (!persistedUserData) return;
-
-    //validate hmac
-    const ok = await validateHmac(
-      persistedUserData.data,
-      persistedUserData.hmac
-    );
-    if (!ok) throw Error("Data is invalid");
-
-    //decompress
-    return await decompress<TimeTurtle>(persistedUserData.data);
-  }
-  async save(tt: TimeTurtle) {
-    //compress
-    const compressedUserData = await compress(tt);
-    //map
-    const up: PersistenceBlob = {
-      id: uuidv4(),
-      lastAccessed: Date.now(),
-      hmac: await generateHmac(compressedUserData),
-      data: compressedUserData,
-    };
-    //save
-    return this.persister.save(up);
-  }
-}
-
-// export class TimeUser {
 export const UserModel = {
-  // userType: User;
-
-  // constructor(usr: UserInfo) {
-  //   this.userType = {
-  //     info: usr,
-  //     time: {
-  //       flags: [],
-  //       entries: [],
-  //     },
-  //   };
-  // }
-  create(info: User["info"]): User {
-    return { info, time: { flags: [], entries: [] } };
+  create(name: string, email: string): User {
+    return {
+      info: {
+        id: uuidv4(),
+        name,
+        email,
+      },
+      time: { flags: [], entries: [] },
+    };
   },
 
-  // static fromType(ut: User) {
-  //   const newUser = new TimeUser(ut.info);
-  //   newUser.userType.time = ut.time;
-  //   return newUser;
-  // }
-
-  createTimeEntry(
+  createTimeEntry: async (
     u: User,
     ...flags: string[]
-  ): {
+  ): Promise<{
     u: User;
     te: TimeEntry;
-  } {
+  }> => {
     const te: TimeEntry = {
       id: uuidv4(),
       inTime: Date.now(),
+      sig: "",
       flags,
     };
+
+    //set validation sig
+    te.sig = await TimeEntryModel.createValidationSig(te);
+
     u.time.entries.push(te);
     return { u, te };
   },
 
-  closeTimeEntry(u: User, id: string): boolean {
+  closeTimeEntry: async (u: User, id: string): Promise<boolean> => {
     const te = u.time.entries.find((e) => e.id === id);
     if (!te) return false;
     te.outTime = Date.now();
+    te.sig = await TimeEntryModel.createValidationSig(te);
     return true;
   },
 
@@ -160,4 +113,35 @@ export const UserModel = {
   },
 
   cloneUser: (u: User): User => structuredClone(u),
+};
+
+export const TimeTurtleModel = {
+  create: (): TimeTurtle => ({ users: [] }),
+  addUser: (u: User, tt: TimeTurtle) => tt.users.push(u),
+  deleteUser: (uId: string, tt: TimeTurtle) => {
+    tt.users = tt.users.filter((u) => u.info.id === uId);
+  },
+  getUser: (uId: string, tt: TimeTurtle) =>
+    tt.users.find((u) => u.info.id === uId),
+  clone: (tt: TimeTurtle) => structuredClone(tt),
+};
+
+export const TimeEntryModel = {
+  createValidationSig: async (te: TimeEntry) => {
+    return await generateHmac(
+      JSON.stringify({
+        in: te.inTime,
+        out: te.outTime,
+      })
+    );
+  },
+  validate: async (te: TimeEntry) => {
+    return await validateHmac(
+      JSON.stringify({
+        in: te.inTime,
+        out: te.outTime,
+      }),
+      te.sig
+    );
+  },
 };

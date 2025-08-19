@@ -1,9 +1,6 @@
-import { PersistenceBlob, Persister } from "./time-turtle-persist";
+import { PersistenceBlob, Persister, TimeTurtleRepo } from "../lib/time-turtle-persist";
 
-
-type NewType = Persister;
-
-export class LS_Repo implements NewType {
+class LS_Persistence implements Persister {
   #key = "tt_data";
 
   save(up: PersistenceBlob) {
@@ -16,3 +13,6 @@ export class LS_Repo implements NewType {
     }
   }
 }
+
+const localRepo = new TimeTurtleRepo(new LS_Persistence());
+export default localRepo;
