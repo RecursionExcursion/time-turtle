@@ -1,16 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useDatePicker } from "../../hooks/useDatePicker";
 import { useEffect } from "react";
-import { useModal } from "../../hooks/useModal";
+import { useDatePicker } from "./useDatePicker";
+import { useModal } from "./useModal";
 
-type DateRangeSelectorProps = {
-  modalId: string;
-};
-
-export default function DateRangeSelector(props: DateRangeSelectorProps) {
-  const { modalId } = props;
+export function useDateRange(modalId: string) {
+  //   const { modalId } = props;
 
   const { Modal, setModal, setShowModal } = useModal({ id: modalId });
 
@@ -43,7 +39,7 @@ export default function DateRangeSelector(props: DateRangeSelectorProps) {
       return;
     }
 
-    setModal(ToCalendarSelector.selector);
+    setModal(ToCalendarSelector.selector());
   }, [ToCalendarSelector.showSelector]);
 
   useEffect(() => {
@@ -52,23 +48,20 @@ export default function DateRangeSelector(props: DateRangeSelectorProps) {
       return;
     }
 
-    setModal(FromCalendarSelector.selector);
+    setModal(FromCalendarSelector.selector());
   }, [FromCalendarSelector.showSelector]);
 
-  return (
-    <div className="flex flex-col items-center gap-7">
-      Filter:
-      <div className="flex items-center">
-        {/* From:
-        {FromDatePicker} */}
-        {FromCalendarSelector.selectorButton}
-      </div>
-      <div className="flex items-center">
-        {/* To:
-        {ToDatePicker} */}
-        {ToCalendarSelector.selectorButton}
-      </div>
-      {Modal()}
-    </div>
-  );
+  return {
+    modal: Modal(),
+    from: {
+      inputs: FromPickerInputs,
+      calendar: FromCalendarSelector.selectorButton,
+      date: fromDate,
+    },
+    to: {
+      inputs: ToPickerInputs,
+      calendar: ToCalendarSelector.selectorButton,
+      date: ToDate,
+    },
+  };
 }

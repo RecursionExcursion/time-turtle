@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppContext } from "../../app/context/AppContext";
-import { UserModel } from "../../lib/time-turtle";
+import { TimeTurtleModel } from "../../lib/time-turtle";
 
 export default function TimeTableControls() {
   const { user, saveUser } = useAppContext();
@@ -9,19 +9,24 @@ export default function TimeTableControls() {
   async function handleTimeEntryClick() {
     if (!user) return;
 
-    const copy = UserModel.cloneUser(user);
-    const loe = UserModel.getLatestOpenEntry(user);
+    const copy = TimeTurtleModel.user.cloneUser(user);
+    const loe = TimeTurtleModel.user.getLatestOpenEntry(user);
     if (!loe) {
-      await UserModel.createTimeEntry(copy);
+      await TimeTurtleModel.user.createTimeEntry(copy);
     } else {
-      await UserModel.closeTimeEntry(copy, loe.id);
+      await TimeTurtleModel.user.closeTimeEntry(copy, loe.id);
     }
     saveUser(copy);
   }
 
   return (
     <div>
-      <button className="cursor-pointer border border-white" onClick={handleTimeEntryClick}>Punch</button>
+      <button
+        className="cursor-pointer border border-white"
+        onClick={handleTimeEntryClick}
+      >
+        Punch
+      </button>
     </div>
   );
 }

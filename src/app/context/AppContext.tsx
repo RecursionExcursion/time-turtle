@@ -1,18 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import {
-  TimeTurtle,
-  TimeTurtleModel,
-  User,
-  UserModel,
-} from "../../lib/time-turtle";
+import { TimeTurtleModel, TimeTurtle, User } from "../../lib/time-turtle";
 import localRepo from "../../service/client-persistence-service";
 import MainHeader from "../../components/app/MainHeader";
 
 type AppContextState = {
   user?: User;
-  createUser: (u: User) => void;
+  createUser: (name: string, email: string) => void;
   saveUser: (u: User) => void;
 };
 
@@ -43,10 +38,11 @@ export const AppProvider = (props: AppProviderProps) => {
     if (usr) setUser(usr);
   }
 
-  function createUser(newUser: User) {
+  function createUser(name: string, email: string) {
     if (timeTurtleData) {
-      const copy = TimeTurtleModel.clone(timeTurtleData);
-      TimeTurtleModel.addUser(newUser, copy);
+      const newUser = TimeTurtleModel.user.create(name, email);
+      const copy = TimeTurtleModel.time.clone(timeTurtleData);
+      TimeTurtleModel.time.addUser(newUser, copy);
       localRepo.save(copy);
       setTimeTurtleData(copy);
     }
@@ -58,11 +54,11 @@ export const AppProvider = (props: AppProviderProps) => {
         (u) => u.info.id === usr.info.id
       );
       if (usrIndex !== -1) {
-        const copy = TimeTurtleModel.clone(timeTurtleData);
+        const copy = TimeTurtleModel.time.clone(timeTurtleData);
         copy.users[usrIndex] = usr;
         localRepo.save(copy);
         setTimeTurtleData(copy);
-        setUser(UserModel.cloneUser(usr));
+        setUser(TimeTurtleModel.user.cloneUser(usr));
       }
     }
   }

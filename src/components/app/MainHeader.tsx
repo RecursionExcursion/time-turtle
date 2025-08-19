@@ -14,7 +14,11 @@ export default function MainHeader(props: MainHeaderProps) {
   const { users = [], setUserById } = props;
 
   return (
-    <header className="col-[2] row-[1] bg-slate-300 border-b border-slate-200 px-6 py-4 flex items-center justify-between text-black">
+    <header
+      className="flex justify-between items-center
+     bg-primary-purple border-b border-slate-200 text-black
+     px-6 py-4"
+    >
       TIME TURTLE
       <UserSelect users={users} setUserById={setUserById} />
       <Link href={"/main/register"}>New User</Link>

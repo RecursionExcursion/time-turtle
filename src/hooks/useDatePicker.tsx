@@ -2,6 +2,7 @@
 
 import {
   ChangeEvent,
+  ComponentPropsWithoutRef,
   Dispatch,
   JSX,
   ReactNode,
@@ -24,15 +25,14 @@ type UseDatePickerProps = {
 export function useDatePicker(props: UseDatePickerProps) {
   const [date, setDate] = useState(props.date ?? new Date());
 
-  const { picker, selector } = CreateDatePickerWithModal({
+  const { picker: inputs, selector } = CreateDatePickerWithModal({
     date: date,
     setDate: setDate,
     iconAction: props.iconAction,
   });
 
   return {
-    // DatePicker: <DatePicker date={date} setDate={setDate} />,
-    DatePicker: picker,
+    PickerInputs: inputs,
     CalendarSelector: selector,
     date,
   };
@@ -43,13 +43,13 @@ const icons: Record<string, ReactNode> = {
 };
 
 const styles = {
-  picker: {
-    button: `px-0 py-1 cursor-pointer text-white hover:text-cyan-400 `,
-    wrapper:
-      "flex items-center justify-center text-primary bg-accent h-12 w-fit rounded-[5px]",
-    wrapperInvalidOutline: "outline outline-[0.2rem] outline-red-500",
-    input: "rounded-[0.25rem] text-black p-1 px-2 w-10 text-center",
-  },
+  // picker: {
+  //   button: `px-0 py-1 cursor-pointer text-white hover:text-cyan-400 `,
+  //   wrapper:
+  //     "flex items-center justify-center text-primary bg-accent h-12 w-fit rounded-[5px]",
+  //   wrapperInvalidOutline: "outline outline-[0.2rem] outline-red-500",
+  //   input: "rounded-[0.25rem] text-black p-1 px-2 w-10 text-center",
+  // },
   selector: {
     wrapper:
       "flex items-center justify-center flex-col gap-2 rounded-md text-black bg-white",
@@ -151,100 +151,128 @@ function CreateDatePickerWithModal(props: DatePickerProps) {
   };
 
   return {
-    picker: (
-      <div>
-        <div className="flex gap-1">
-          <div
-            className={
-              dateIsValid
-                ? styles.picker.wrapper
-                : [
-                    styles.picker.wrapper,
-                    styles.picker.wrapperInvalidOutline,
-                  ].join(" ")
-            }
-          >
-            <input
-              name="month"
-              className={styles.picker.input}
-              type="text"
-              value={inputDate.month}
-              onChange={handleDateChange}
-            />
-            /
-            <input
-              name="day"
-              className={styles.picker.input}
-              type="text"
-              value={inputDate.day}
-              onChange={handleDateChange}
-            />
-            /
-            <input
-              name="year"
-              className={[styles.picker.input, "w-20"].join(" ")}
-              type="text"
-              value={inputDate.year}
-              onChange={handleDateChange}
-            />
-          </div>
-        </div>
-      </div>
-    ),
+    picker: {
+      month: function (props: ComponentPropsWithoutRef<"input">) {
+        return (
+          <input
+            // className={styles.picker.input}
+            name="month"
+            type="text"
+            value={inputDate.month}
+            onChange={handleDateChange}
+            {...props}
+          />
+        );
+      },
+      day: function (props: ComponentPropsWithoutRef<"input">) {
+        return (
+          <input
+            name="day"
+            // className={styles.picker.input}
+            type="text"
+            value={inputDate.day}
+            onChange={handleDateChange}
+            {...props}
+          />
+        );
+      },
+      year: function (props: ComponentPropsWithoutRef<"input">) {
+        return (
+          <input
+            name="year"
+            // className={[styles.picker.input, "w-20"].join(" ")}
+            type="text"
+            value={inputDate.year}
+            onChange={handleDateChange}
+            {...props}
+          />
+        );
+      },
+    },
     selector: {
-      selector: (
-        <DateSelector setParentDate={setDate} setShowDialog={setShowDialog} />
-      ),
+      selector: function () {
+        return (
+          <DateSelector
+            key={date.getTime()}
+            parentDate={date}
+            setParentDate={setDate}
+            setShowDialog={setShowDialog}
+          />
+        );
+      },
       showSelector: showDialog,
-      selectorButton: (
-        <button
-          className={[styles.picker.button, "text-black"].join(" ")}
-          onClick={
-            iconAction
-              ? () =>
-                  iconAction(
-                    (b: boolean) => setShowDialog(b),
-                    showDialog,
-                    <DateSelector
-                      setParentDate={setDate}
-                      setShowDialog={setShowDialog}
-                    />
-                  )
-              : () => setShowDialog(!showDialog)
-          }
-        >
-          {icons.calender}
-        </button>
-      ),
+      selectorButton: function (
+        props?: ComponentPropsWithoutRef<"button"> & {
+          icon?: ReactNode;
+        }
+      ) {
+        let ico, attr;
+        if (props) {
+          const { icon, ...rest } = props;
+          ico = icon;
+          attr = rest;
+        }
+        return (
+          <button
+            onClick={
+              iconAction
+                ? () =>
+                    iconAction(
+                      (b: boolean) => setShowDialog(b),
+                      showDialog,
+                      <DateSelector
+                        key={date.getTime()}
+                        parentDate={date}
+                        setParentDate={setDate}
+                        setShowDialog={setShowDialog}
+                      />
+                    )
+                : () => setShowDialog(!showDialog)
+            }
+            {...attr}
+          >
+            {ico ?? icons.calender}
+          </button>
+        );
+      },
     },
   };
 }
 
 type DateSelectorProps = {
+  parentDate: Date;
   setParentDate: Dispatch<SetStateAction<Date>>;
   setShowDialog: Dispatch<SetStateAction<boolean>>;
 };
 
 export function DateSelector(props: DateSelectorProps) {
-  const { setParentDate, setShowDialog } = props;
+  const { parentDate, setParentDate, setShowDialog } = props;
 
-  const [date, setDate] = useState(new Date());
-  const monthName = `${getFullMonthName(date)} ${date.getFullYear()}`;
+  const [calendarDate, setCalendarDate] = useState(parentDate);
 
-  const firstOnCalender = getFirstOnCalender(date);
+  function setDate(d: Date) {
+    setCalendarDate(d);
+    setParentDate(d);
+  }
+
+  const monthName = `${getFullMonthName(
+    calendarDate
+  )} ${calendarDate.getFullYear()}`;
+
+  const firstOnCalender = getFirstOnCalender(calendarDate);
 
   const generateDaySquares = (): JSX.Element[] => {
     const calendarLength = 35;
     const calenderStartDate = firstOnCalender;
 
     return Array.from({ length: calendarLength }).map((_, i) => {
-      const date = changeDate(calenderStartDate, i, "day");
+      const cellDate = changeDate(calenderStartDate, i, "day");
       return (
         <DateSelectorCell
-          key={i}
-          date={date}
-          setter={setParentDate}
-          setShowDialog={setShowDialog}
+          key={cellDate.toISOString()}
+          date={cellDate}
+          selectedDate={calendarDate}
+          setter={setDate}
         />
       );
     });
@@ -269,12 +297,12 @@ export function DateSelector(props: DateSelectorProps) {
       <div className={styles.selector.monthContainer}>
         <MonthSelectorButton
           dir="back"
-          onClick={() => setDate(changeDate(date, -1, "month"))}
+          onClick={() => setDate(changeDate(calendarDate, -1, "month"))}
         />
         <h3 className="text-center font-bold">{monthName}</h3>
         <MonthSelectorButton
           dir="forward"
-          onClick={() => setDate(changeDate(date, 1, "month"))}
+          onClick={() => setDate(changeDate(calendarDate, 1, "month"))}
         />
       </div>
       <div className={styles.selector.grid}>{generateDaySquares()}</div>
@@ -282,30 +310,30 @@ export function DateSelector(props: DateSelectorProps) {
   );
 }
 
+const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
 type DateSelectorCellProps = {
+  selectedDate: Date;
   date: Date;
-  setter: Dispatch<SetStateAction<Date>>;
-  setShowDialog: Dispatch<SetStateAction<boolean>>;
+  setter: (d: Date) => void;
 };
 function DateSelectorCell(props: DateSelectorCellProps) {
-  const { date, setter, setShowDialog } = props;
-
-  const setDate = () => {
-    setter(date);
-    setShowDialog(false);
-  };
-
-  const today = new Date();
-  const isToday = date.toLocaleDateString() === today.toLocaleDateString();
+  const { date, selectedDate, setter } = props;
+  const isSelected = isSameDay(date, selectedDate);
+  const isToday = isSameDay(date, new Date());
 
   return (
     <div
-      className={
-        !isToday
-          ? styles.selector.cell
-          : [styles.selector.cell, "bg-green-500"].join(" ")
-      }
-      onClick={setDate}
+      className={[
+        styles.selector.cell,
+        isSelected ? "bg-blue-500" : isToday ? "bg-green-500" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onClick={() => setter(date)}
     >
       {date.getDate()}
     </div>

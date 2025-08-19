@@ -2,7 +2,6 @@
 
 import { ChangeEvent, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
-import { UserModel } from "../../../lib/time-turtle";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
@@ -38,7 +37,7 @@ export default function RegisterPage() {
       <button
         className="cursor-pointer border border-white w-20"
         onClick={() => {
-          createUser(UserModel.create(regState.name, regState.email));
+          createUser(regState.name, regState.email);
           router.push("/main");
         }}
       >
