@@ -26,6 +26,9 @@ export const AppProvider = (props: AppProviderProps) => {
     localRepo.read().then((data) => {
       if (data) {
         setTimeTurtleData(data);
+        if (data.users.length) {
+          setUser(data.users[0]);
+        }
       } else {
         console.log("No data found creating new DS");
         setTimeTurtleData({ users: [] });

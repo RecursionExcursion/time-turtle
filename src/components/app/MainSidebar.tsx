@@ -1,9 +1,6 @@
 "use client";
 
 import { ReactNode } from "react";
-import MenuAnchor from "../ui/MenuAnchor";
-import DateRangeSelector from "./DateRangeSelector";
-import TimeTableControls from "./TimeTableControls";
 import { useDateRange } from "../../hooks/useDateRange";
 
 export default function MainSidebar() {

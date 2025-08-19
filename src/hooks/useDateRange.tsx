@@ -1,67 +1,58 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDatePicker } from "./useDatePicker";
 import { useModal } from "./useModal";
 
 export function useDateRange(modalId: string) {
-  //   const { modalId } = props;
-
   const { Modal, setModal, setShowModal } = useModal({ id: modalId });
+  const to = useDatePicker({ date: new Date() });
+  const from = useDatePicker({ date: new Date() });
 
-  const {
-    PickerInputs: ToPickerInputs,
-    date: ToDate,
-    CalendarSelector: ToCalendarSelector,
-  } = useDatePicker({
-    date: new Date(),
-    iconAction(setter, showDialog) {
-      setter(!showDialog);
-      setShowModal(!showDialog);
-    },
-  });
-  const {
-    PickerInputs: FromPickerInputs,
-    date: fromDate,
-    CalendarSelector: FromCalendarSelector,
-  } = useDatePicker({
-    date: new Date(),
-    iconAction(setter, showDialog) {
-      setter(!showDialog);
-      setShowModal(!showDialog);
-    },
-  });
+  const [modalKey, setModalKey] = useState<"to" | "from" | undefined>();
 
   useEffect(() => {
-    if (!ToCalendarSelector.showSelector) {
+    if (!modalKey) {
       setShowModal(false);
       return;
     }
 
-    setModal(ToCalendarSelector.selector());
-  }, [ToCalendarSelector.showSelector]);
+    setShowModal(true);
 
-  useEffect(() => {
-    if (!FromCalendarSelector.showSelector) {
-      setShowModal(false);
+    if (modalKey === "to") {
+      setModal(<to.CalendarSelector.selector key={"to"} />);
+      from.CalendarSelector.showSelectorState.set(false);
       return;
     }
+    if (modalKey === "from") {
+      setModal(<from.CalendarSelector.selector key={"from"} />);
+      to.CalendarSelector.showSelectorState.set(false);
+      return;
+    }
+  }, [modalKey]);
 
-    setModal(FromCalendarSelector.selector());
-  }, [FromCalendarSelector.showSelector]);
+  useEffect(() => {
+    if (from.CalendarSelector.showSelectorState.state) setModalKey("from");
+    else if (modalKey === "from") setModalKey(undefined);
+  }, [from.CalendarSelector.showSelectorState.state]);
+  useEffect(() => {
+    if (to.CalendarSelector.showSelectorState.state) {
+      setModalKey("to");
+    } else if (modalKey === "to") setModalKey(undefined);
+  }, [to.CalendarSelector.showSelectorState.state]);
 
   return {
     modal: Modal(),
     from: {
-      inputs: FromPickerInputs,
-      calendar: FromCalendarSelector.selectorButton,
-      date: fromDate,
+      inputs: from.PickerInputs,
+      calendar: from.CalendarSelector.selectorButton,
+      date: from.date,
     },
     to: {
-      inputs: ToPickerInputs,
-      calendar: ToCalendarSelector.selectorButton,
-      date: ToDate,
+      inputs: to.PickerInputs,
+      calendar: to.CalendarSelector.selectorButton,
+      date: to.date,
     },
   };
 }

@@ -42,26 +42,6 @@ const icons: Record<string, ReactNode> = {
   calender: <CalendarSVG />,
 };
 
-const styles = {
-  // picker: {
-  //   button: `px-0 py-1 cursor-pointer text-white hover:text-cyan-400 `,
-  //   wrapper:
-  //     "flex items-center justify-center text-primary bg-accent h-12 w-fit rounded-[5px]",
-  //   wrapperInvalidOutline: "outline outline-[0.2rem] outline-red-500",
-  //   input: "rounded-[0.25rem] text-black p-1 px-2 w-10 text-center",
-  // },
-  selector: {
-    wrapper:
-      "flex items-center justify-center flex-col gap-2 rounded-md text-black bg-white",
-    controlContainer:
-      "flex justify-between w-full bg-blue-500 p-2 box-border rounded-md rounded-b-none",
-    monthContainer: "box-border grid w-full grid-cols-[1rem_1fr_1rem] px-2",
-    grid: "grid grid-cols-7 w-full box-border p-2",
-    cell: "text-center border border-black p-2 cursor-pointer hover:bg-cyan-400",
-    monthButton: "text-primary cursor-pointer font-bold",
-  },
-};
-
 type DatePickerProps = {
   date: Date;
   setDate: Dispatch<SetStateAction<Date>>;
@@ -200,7 +180,10 @@ function CreateDatePickerWithModal(props: DatePickerProps) {
           />
         );
       },
-      showSelector: showDialog,
+      showSelectorState: {
+        set: setShowDialog,
+        state: showDialog,
+      },
       selectorButton: function (
         props?: ComponentPropsWithoutRef<"button"> & {
           icon?: ReactNode;
@@ -238,6 +221,27 @@ function CreateDatePickerWithModal(props: DatePickerProps) {
     },
   };
 }
+
+/* Below is the code for the calendar UI */
+const styles = {
+  // picker: {
+  //   button: `px-0 py-1 cursor-pointer text-white hover:text-cyan-400 `,
+  //   wrapper:
+  //     "flex items-center justify-center text-primary bg-accent h-12 w-fit rounded-[5px]",
+  //   wrapperInvalidOutline: "outline outline-[0.2rem] outline-red-500",
+  //   input: "rounded-[0.25rem] text-black p-1 px-2 w-10 text-center",
+  // },
+  selector: {
+    wrapper:
+      "flex items-center justify-center flex-col gap-2 rounded-md text-black bg-white",
+    controlContainer:
+      "flex justify-between w-full bg-blue-500 p-2 box-border rounded-md rounded-b-none",
+    monthContainer: "box-border grid w-full grid-cols-[1rem_1fr_1rem] px-2",
+    grid: "grid grid-cols-7 w-full box-border p-2",
+    cell: "text-center border border-black p-2 cursor-pointer hover:bg-cyan-400",
+    monthButton: "text-primary cursor-pointer font-bold",
+  },
+};
 
 type DateSelectorProps = {
   parentDate: Date;
