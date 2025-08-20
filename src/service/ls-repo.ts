@@ -1,5 +1,4 @@
-import { PersistenceBlob, Persister } from "./time-turtle-persist";
-
+import { PersistenceBlob, Persister } from "./persistence-service";
 
 type NewType = Persister;
 

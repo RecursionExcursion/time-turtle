@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
-import { generateHmac, validateHmac } from "../service/hmac-service";
+// import { generateHmac, validateHmac } from "../service/hmac-service";
 
 /* Data Shape */
-export type TimeTurtle = {
+export type TimeTurtleStruct = {
   users: User[];
 };
 
@@ -27,10 +27,66 @@ export type TimeEntry = {
   flags: string[];
 };
 
-export const TimeTurtleModel = {
-  user: {
-    create(name: string, email: string): User {
-      return {
+export interface TimeEntryValidator {
+  generate: (te: TimeEntry) => Promise<string>;
+  validate: (te: TimeEntry) => Promise<boolean>;
+}
+/* Default validator */
+let validatorRef: TimeEntryValidator = {
+  async generate(te) {
+    return `${te.inTime}${te.outTime}`;
+  },
+  async validate(te) {
+    return te.sig === `${te.inTime}${te.outTime}`;
+  },
+};
+
+export class TimeTurtle {
+  validator: TimeEntryValidator;
+  tt: TimeTurtleStruct;
+
+  constructor(props?: { tt?: TimeTurtleStruct }) {
+    this.tt = props?.tt ?? { users: [] };
+
+    if (!validatorRef) {
+      throw new Error("Time Turtle is not initalized");
+    }
+
+    this.validator = validatorRef;
+  }
+
+  static init(validator: TimeEntryValidator) {
+    validatorRef = validator;
+  }
+  static new = (): TimeTurtleStruct => ({ users: [] });
+  static JSON = {
+    to: (tt: TimeTurtle) => JSON.stringify(tt.tt),
+    from: (jsn: string) => JSON.parse(jsn) as TimeTurtleStruct,
+  };
+
+  #addUser = (u: User) => this.tt.users.push(u);
+  getUsers = () => this.tt.users;
+  getUser = (uId: string) => this.tt.users.find((u) => u.info.id === uId);
+  deleteUser = (uId: string) => {
+    this.tt.users = this.tt.users.filter((u) => u.info.id === uId);
+  };
+  getUserIndex = (uId: string) => {
+    const i = this.tt.users.findIndex((u) => u.info.id === uId);
+    return {
+      index: i,
+      user: i >= 0 ? this.tt.users[i] : undefined,
+    };
+  };
+  clone = (): TimeTurtle => {
+    return new TimeTurtle({
+      tt: structuredClone(this.tt),
+    });
+  };
+
+  user = {
+    /* create and add */
+    register: (name: string, email: string): User => {
+      const newUser = {
         info: {
           id: uuidv4(),
           name,
@@ -38,15 +94,37 @@ export const TimeTurtleModel = {
         },
         time: { flags: [], entries: [] },
       };
+      this.#addUser(newUser);
+      return newUser;
+    },
+
+    update: (usr: User): boolean => {
+      const i = this.tt.users.findIndex((u) => u.info.id === usr.info.id);
+
+      if (i === -1) {
+        return false;
+      }
+
+      this.tt.users[i] = usr;
+      return true;
     },
 
     createTimeEntry: async (
-      u: User,
+      uId: string,
       ...flags: string[]
-    ): Promise<{
-      u: User;
-      te: TimeEntry;
-    }> => {
+    ): Promise<
+      | {
+          u: User;
+          te: TimeEntry;
+        }
+      | undefined
+    > => {
+      const u = this.getUser(uId);
+
+      if (!u) {
+        return;
+      }
+
       const te: TimeEntry = {
         id: uuidv4(),
         inTime: Date.now(),
@@ -55,18 +133,24 @@ export const TimeTurtleModel = {
       };
 
       //set validation sig
-      te.sig = await createTimeEntrySignature(te);
+      te.sig = await this.validator.generate(te);
 
       u.time.entries.push(te);
       return { u, te };
     },
 
-    closeTimeEntry: async function (u: User, id: string): Promise<boolean> {
+    closeTimeEntry: async (uId: string, id: string): Promise<boolean> => {
+      const u = this.getUser(uId);
+
+      if (!u) {
+        return false;
+      }
+
       const te = u.time.entries.find((e) => e.id === id);
       if (!te) return false;
       te.outTime = Date.now();
       //set validation sig
-      te.sig = await createTimeEntrySignature(te);
+      te.sig = await this.validator.generate(te);
       return true;
     },
 
@@ -114,41 +198,11 @@ export const TimeTurtleModel = {
       return entriesAfter;
     },
 
-    cloneUser: (u: User): User => structuredClone(u),
-  },
+    clone: (u: User): User => structuredClone(u),
+  };
 
-  entry: {
-    createValidationSig: async (te: TimeEntry) => createTimeEntrySignature(te),
-    validate: async (te: TimeEntry) => validateEntry(te),
-  },
-
-  time: {
-    create: (): TimeTurtle => ({ users: [] }),
-    addUser: (u: User, tt: TimeTurtle) => tt.users.push(u),
-    deleteUser: (uId: string, tt: TimeTurtle) => {
-      tt.users = tt.users.filter((u) => u.info.id === uId);
-    },
-    getUser: (uId: string, tt: TimeTurtle) =>
-      tt.users.find((u) => u.info.id === uId),
-    clone: (tt: TimeTurtle) => structuredClone(tt),
-  },
-};
-
-async function validateEntry(te: TimeEntry) {
-  return await validateHmac(
-    JSON.stringify({
-      in: te.inTime,
-      out: te.outTime,
-    }),
-    te.sig
-  );
-}
-
-async function createTimeEntrySignature(te: TimeEntry) {
-  return await generateHmac(
-    JSON.stringify({
-      in: te.inTime,
-      out: te.outTime,
-    })
-  );
+  entry = {
+    createValidationSig: async (te: TimeEntry) => this.validator.generate(te),
+    validate: async (te: TimeEntry) => this.validator.validate(te),
+  };
 }

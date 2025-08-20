@@ -1,4 +1,4 @@
-import { PersistenceBlob, Persister, TimeTurtleRepo } from "../lib/time-turtle-persist";
+import { PersistenceBlob, Persister, TimeTurtleRepo } from "./persistence-service";
 
 class LS_Persistence implements Persister {
   #key = "tt_data";

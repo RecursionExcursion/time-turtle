@@ -2,7 +2,7 @@
 
 import TimeTable from "./TimeTable";
 import MainSidebar from "./MainSidebar";
-import { useAppContext } from "../../app/context/AppContext";
+import { useAppContext } from "../../context/AppContext";
 
 export default function MainDisplay() {
   const { user } = useAppContext();

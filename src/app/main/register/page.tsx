@@ -1,8 +1,8 @@
 "use client";
 
 import { ChangeEvent, useState } from "react";
-import { useAppContext } from "../../context/AppContext";
 import { useRouter } from "next/navigation";
+import { useAppContext } from "../../../context/AppContext";
 
 export default function RegisterPage() {
   const { createUser } = useAppContext();

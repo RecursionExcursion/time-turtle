@@ -1,7 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
-import { generateHmac, validateHmac } from "../service/hmac-service";
-import { compress, decompress } from "../service/compression-service";
-import { TimeTurtle } from "./time-turtle";
+import { generateHmac, validateHmac } from "./hmac-service";
+import { compress, decompress } from "./compression-service";
+import { TimeTurtleStruct } from "../lib/time-turtle";
+
+export interface Persister {
+  save: (up: PersistenceBlob) => void;
+  read: () => PersistenceBlob | undefined;
+}
 
 /* Persistence Type */
 export type PersistenceBlob = {
@@ -11,15 +16,10 @@ export type PersistenceBlob = {
   data: string; //compressed payload
 };
 
-export interface Persister {
-  save: (up: PersistenceBlob) => void;
-  read: () => PersistenceBlob | undefined;
-}
-
 export class TimeTurtleRepo {
   constructor(private readonly persister: Persister) {}
 
-  async read(): Promise<TimeTurtle | undefined> {
+  async read(): Promise<TimeTurtleStruct | undefined> {
     const persistedUserData = this.persister.read();
     if (!persistedUserData) return;
 
@@ -31,9 +31,9 @@ export class TimeTurtleRepo {
     if (!ok) throw Error("Data is invalid");
 
     //decompress
-    return await decompress<TimeTurtle>(persistedUserData.data);
+    return await decompress<TimeTurtleStruct>(persistedUserData.data);
   }
-  async save(tt: TimeTurtle) {
+  async save(tt: TimeTurtleStruct) {
     //compress
     const compressedUserData = await compress(tt);
     //map
