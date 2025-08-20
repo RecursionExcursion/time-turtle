@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.50.4-build1",
     "next": "15.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",

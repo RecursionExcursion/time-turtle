@@ -1,10 +1,10 @@
 "use client";
 
 import { ChangeEvent } from "react";
-import { User } from "../../lib/time-turtle";
+import { UserDTO } from "../../service/db";
 
 type UserSelectProps = {
-  users: User[];
+  users: UserDTO[];
   setUserById: (id: string) => void;
 };
 
@@ -27,8 +27,8 @@ export default function UserSelect(props: UserSelectProps) {
         >
           <option value="">Please select</option>
           {users.map((u) => (
-            <option key={u.info.id} value={u.info.id}>
-              {u.info.name}
+            <option key={u.id} value={u.id}>
+              {u.name}
             </option>
           ))}
         </select>

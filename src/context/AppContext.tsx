@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { TimeTurtle, User } from "../lib/time-turtle";
 import localRepo from "../service/client-persistence-service";
 import MainHeader from "../components/app/MainHeader";
+import { db, UserDTO } from "../service/db";
 
 type AppContextState = {
   user?: User;
@@ -18,21 +19,36 @@ type AppProviderProps = {
 };
 
 export const AppProvider = (props: AppProviderProps) => {
+  const [userList, setUserList] = useState<UserDTO[]>([]);
   const [user, setUser] = useState<User>();
   const [timeTurtleData, setTimeTurtleData] = useState<TimeTurtle>();
 
   useEffect(() => {
-    localRepo.read().then((data) => {
-      if (data) {
-        setTimeTurtleData(new TimeTurtle({ tt: data }));
-        if (data.users.length) {
-          setUser(data.users[0]);
-        }
-      } else {
-        console.log("No data found creating new DS");
-        setTimeTurtleData(new TimeTurtle());
-      }
-    });
+    // localRepo.read().then((data) => {
+    //   if (data) {
+    //     setTimeTurtleData(new TimeTurtle({ tt: data }));
+    //     if (data.users.length) {
+    //       setUser(data.users[0]);
+    //     }
+    //   } else {
+    //     console.log("No data found creating new DS");
+    //     setTimeTurtleData(new TimeTurtle());
+    //   }
+    // });
+    // clientSQL.getAllUsers().then((usrs) => console.log(usrs));
+
+    db.init()
+      .then(() => db.getAll())
+      .then((usrs) => {
+        console.log({ usrs });
+
+        setUserList(usrs);
+      });
+
+    // const nu = tt.user.register("foofers", "marshal");
+    // console.log({ nu });
+
+    // db.init().then(() => db.saveUser(nu));
   }, []);
 
   async function punchClock() {
@@ -57,8 +73,11 @@ export const AppProvider = (props: AppProviderProps) => {
     setTimeTurtleData(timeTurtleData.clone());
   }
 
-  function setUserById(id: string) {
-    const usr = timeTurtleData?.getUser(id);
+  async function setUserById(id: string) {
+    const usr = await db.getUser(id);
+    console.log({ usr });
+
+    // const usr = timeTurtleData?.getUser(id);
     if (usr) setUser(usr);
   }
 
@@ -88,10 +107,7 @@ export const AppProvider = (props: AppProviderProps) => {
       }}
     >
       <div className="flex flex-col gap-5 h-screen text-white">
-        <MainHeader
-          users={timeTurtleData?.tt.users}
-          setUserById={setUserById}
-        />
+        <MainHeader users={userList} setUserById={setUserById} />
         {props.children}
       </div>
     </AppContext.Provider>

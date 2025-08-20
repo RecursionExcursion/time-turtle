@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { User } from "../../lib/time-turtle";
-
 import UserSelect from "./UserSelect";
+import { UserDTO } from "../../service/db";
 
 type MainHeaderProps = {
-  users?: User[];
+  users?: UserDTO[];
   setUserById: (id: string) => void;
 };
 
