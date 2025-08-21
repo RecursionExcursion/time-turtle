@@ -53,10 +53,11 @@ export const AppProvider = (props: AppProviderProps) => {
 
   async function setUserById(id: string) {
     const usr = await db.getUser(id);
-    console.log({ usr });
+    // console.log({ usr });
 
     // const usr = timeTurtleData?.getUser(id);
     if (usr) setUser(usr);
+    else setUser(undefined)
   }
 
   function createUser(name: string, email: string) {

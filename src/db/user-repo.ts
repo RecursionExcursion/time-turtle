@@ -1,5 +1,6 @@
 import { OpfsDatabase } from "@sqlite.org/sqlite-wasm";
 import { TimeEntry, User, UserDTO } from "./db";
+import { crudQueries } from "./sql-queries";
 
 interface IUserRepo {
   getUser: (db: OpfsDatabase, userId: string) => Promise<User | null>;
@@ -13,11 +14,7 @@ export const userRepo: IUserRepo = {
   getUser: async (db: OpfsDatabase, userId: string) => {
     if (!db) throw new Error("Db not initalized");
 
-    const uStmt = db.prepare(`
-    SELECT id, name, email, flags_json
-    FROM users 
-    WHERE id = ?
-  `);
+    const uStmt = db.prepare(crudQueries.get.user);
     uStmt.bind([userId]);
     if (!uStmt.step()) {
       uStmt.finalize();
@@ -29,12 +26,7 @@ export const userRepo: IUserRepo = {
     const userFlagsJson = (uStmt.get(3) as string) ?? "[]";
     uStmt.finalize();
 
-    const eStmt = db.prepare(`
-    SELECT id, in_time, out_time, sig, flags_json
-    FROM time_entries
-    WHERE user_id = ?
-    ORDER BY in_time DESC
-  `);
+    const eStmt = db.prepare(crudQueries.get.timeEntry);
     eStmt.bind([id]);
 
     const entries: TimeEntry[] = [];
@@ -67,7 +59,7 @@ export const userRepo: IUserRepo = {
   getUsers: async (db: OpfsDatabase) => {
     if (!db) throw new Error("Db not initalized");
 
-    const stmt = db.prepare(`SELECT id, name FROM users ORDER BY name`);
+    const stmt = db.prepare(crudQueries.get.allUsers);
     const users: { id: string; name: string }[] = [];
 
     while (stmt.step()) {
@@ -83,25 +75,8 @@ export const userRepo: IUserRepo = {
   saveUser: async (db: OpfsDatabase, user: User) => {
     if (!db) throw new Error("Db not initalized");
 
-    const upsertUser = db.prepare(`
-                INSERT INTO users(id,name,email,flags_json)
-                VALUES(?,?,?,?)
-                ON CONFLICT(id) DO UPDATE SET 
-                name = excluded.name,
-                email = excluded.email,
-                flags_json = excluded.flags_json
-                `);
-
-    const upsertEntry = db.prepare(`
-    INSERT INTO time_entries(id, user_id, in_time, out_time, sig, flags_json)
-    VALUES(?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      user_id    = excluded.user_id,
-      in_time    = excluded.in_time,
-      out_time   = excluded.out_time,
-      sig        = excluded.sig,
-      flags_json = excluded.flags_json
-  `);
+    const upsertUser = db.prepare(crudQueries.save.user);
+    const upsertEntry = db.prepare(crudQueries.save.timeEntry);
 
     db.exec("BEGIN");
     try {

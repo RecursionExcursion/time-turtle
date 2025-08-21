@@ -1,6 +1,6 @@
 "use client";
 
-import { WorkerPayload, WorkerResponse } from "./db.worker";
+import { WorkerPayload } from "./db.worker";
 
 export type User = {
   info: UserInfo;
@@ -39,7 +39,6 @@ function awaitWorker<T>(w: Worker, payload: WorkerPayload): Promise<T> {
         reject(new Error(data.message));
       }
     };
-
     w.postMessage(payload);
   });
 }
@@ -61,8 +60,11 @@ export const db = {
   getAll: async function (): Promise<UserDTO[]> {
     return awaitWorker<UserDTO[]>(getWorker(), { type: "getUsers" });
   },
-  getUser: async function (id: string): Promise<User> {
-    return awaitWorker<User>(getWorker(), { type: "getUser", payload: id });
+  getUser: async function (id: string): Promise<User | null> {
+    return awaitWorker<User | null>(getWorker(), {
+      type: "getUser",
+      payload: id,
+    });
   },
 };
 
