@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent } from "react";
-import { UserDTO } from "../../service/db";
+import { UserDTO } from "../../db/db";
 
 type UserSelectProps = {
   users: UserDTO[];

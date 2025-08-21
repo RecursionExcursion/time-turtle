@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { TimeTurtle, User } from "../lib/time-turtle";
 import localRepo from "../service/client-persistence-service";
 import MainHeader from "../components/app/MainHeader";
-import { db, UserDTO } from "../service/db";
+import { db, UserDTO } from "../db/db";
 
 type AppContextState = {
   user?: User;
@@ -24,31 +24,9 @@ export const AppProvider = (props: AppProviderProps) => {
   const [timeTurtleData, setTimeTurtleData] = useState<TimeTurtle>();
 
   useEffect(() => {
-    // localRepo.read().then((data) => {
-    //   if (data) {
-    //     setTimeTurtleData(new TimeTurtle({ tt: data }));
-    //     if (data.users.length) {
-    //       setUser(data.users[0]);
-    //     }
-    //   } else {
-    //     console.log("No data found creating new DS");
-    //     setTimeTurtleData(new TimeTurtle());
-    //   }
-    // });
-    // clientSQL.getAllUsers().then((usrs) => console.log(usrs));
-
     db.init()
       .then(() => db.getAll())
-      .then((usrs) => {
-        console.log({ usrs });
-
-        setUserList(usrs);
-      });
-
-    // const nu = tt.user.register("foofers", "marshal");
-    // console.log({ nu });
-
-    // db.init().then(() => db.saveUser(nu));
+      .then((usrs) => setUserList(usrs));
   }, []);
 
   async function punchClock() {

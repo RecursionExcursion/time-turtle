@@ -37,7 +37,7 @@ export const db = {
     return new Promise((resolve, reject) => {
       worker.onmessage = (evt) => {
         const data = evt.data;
-        if (data.type === "ready") {
+        if (data.type === "success") {
           resolve(worker);
         } else if (data.type === "error") {
           reject(new Error(data.message));
@@ -52,14 +52,13 @@ export const db = {
     return new Promise((resolve, reject) => {
       worker.onmessage = (evt) => {
         const data = evt.data;
-        console.log({ d: evt.data });
         if (data.type === "success") {
           resolve(true);
         } else if (data.type === "error") {
           reject(false);
         }
       };
-      worker.postMessage({ type: "save", payload: usr });
+      worker.postMessage({ type: "saveUser", payload: usr });
     });
   },
   getAll: async function (): Promise<UserDTO[]> {
@@ -67,13 +66,15 @@ export const db = {
     return new Promise((resolve, reject) => {
       worker.onmessage = (evt) => {
         const data = evt.data;
+        // console.log({ users: evt.data });
+        // console.log({ data });
         if (data.type === "success") {
-          resolve(evt.data.res);
+          resolve(data.data);
         } else if (data.type === "error") {
           reject([]);
         }
       };
-      worker.postMessage({ type: "getAll" });
+      worker.postMessage({ type: "getUsers" });
     });
   },
   getUser: async function (id: string): Promise<User> {
@@ -82,7 +83,7 @@ export const db = {
       worker.onmessage = (evt) => {
         const data = evt.data;
         if (data.type === "success") {
-          resolve(evt.data.res);
+          resolve(data.data);
         } else if (data.type === "error") {
           reject([]);
         }

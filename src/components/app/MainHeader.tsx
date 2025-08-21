@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import UserSelect from "./UserSelect";
-import { UserDTO } from "../../service/db";
+import { UserDTO } from "../../db/db";
 
 type MainHeaderProps = {
   users?: UserDTO[];
