@@ -1,5 +1,7 @@
 "use client";
 
+import { WorkerPayload, WorkerResponse } from "./db.worker";
+
 export type User = {
   info: UserInfo;
   time: { flags: string[]; entries: TimeEntry[] };
@@ -27,69 +29,40 @@ function getWorker() {
   return workerInstance;
 }
 
+function awaitWorker<T>(w: Worker, payload: WorkerPayload): Promise<T> {
+  return new Promise((resolve, reject) => {
+    w.onmessage = (evt) => {
+      const data = evt.data;
+      if (data.type === "success") {
+        resolve(data.data as T);
+      } else if (data.type === "error") {
+        reject(new Error(data.message));
+      }
+    };
+
+    w.postMessage(payload);
+  });
+}
+
 export const db = {
   init: async function () {
-    const worker = getWorker();
-    const wasmUrl = new URL(
+    const WASM_URL = new URL(
       "/sqlite/sqlite3.wasm",
       window.location.origin
     ).toString();
-    return new Promise((resolve, reject) => {
-      worker.onmessage = (evt) => {
-        const data = evt.data;
-        if (data.type === "success") {
-          resolve(worker);
-        } else if (data.type === "error") {
-          reject(new Error(data.message));
-        }
-      };
-
-      worker.postMessage({ type: "init", payload: wasmUrl }); // use wasmUrl (not payload)
-    });
+    return awaitWorker(getWorker(), { type: "init", payload: WASM_URL });
   },
   saveUser: async function (usr: User): Promise<boolean> {
-    const worker = getWorker();
-    return new Promise((resolve, reject) => {
-      worker.onmessage = (evt) => {
-        const data = evt.data;
-        if (data.type === "success") {
-          resolve(true);
-        } else if (data.type === "error") {
-          reject(false);
-        }
-      };
-      worker.postMessage({ type: "saveUser", payload: usr });
+    return awaitWorker<boolean>(getWorker(), {
+      type: "saveUser",
+      payload: usr,
     });
   },
   getAll: async function (): Promise<UserDTO[]> {
-    const worker = getWorker();
-    return new Promise((resolve, reject) => {
-      worker.onmessage = (evt) => {
-        const data = evt.data;
-        // console.log({ users: evt.data });
-        // console.log({ data });
-        if (data.type === "success") {
-          resolve(data.data);
-        } else if (data.type === "error") {
-          reject([]);
-        }
-      };
-      worker.postMessage({ type: "getUsers" });
-    });
+    return awaitWorker<UserDTO[]>(getWorker(), { type: "getUsers" });
   },
   getUser: async function (id: string): Promise<User> {
-    const worker = getWorker();
-    return new Promise((resolve, reject) => {
-      worker.onmessage = (evt) => {
-        const data = evt.data;
-        if (data.type === "success") {
-          resolve(data.data);
-        } else if (data.type === "error") {
-          reject([]);
-        }
-      };
-      worker.postMessage({ type: "getUser", payload: id });
-    });
+    return awaitWorker<User>(getWorker(), { type: "getUser", payload: id });
   },
 };
 

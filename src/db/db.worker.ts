@@ -9,11 +9,11 @@ let db: OpfsDatabase;
 
 type EventKeys = UserRepoMethod | "init";
 
-type WorkerResponse = { type: "success" | "fail" | "error"; data?: any };
+export type WorkerPayload = { type: EventKeys; payload?: unknown };
+export type ResponseKey = "success" | "fail" | "error";
+export type WorkerResponse = { type: ResponseKey; data?: any };
 
-self.onmessage = async (
-  evt: MessageEvent<{ type: EventKeys; payload: unknown }>
-) => {
+self.onmessage = async (evt: MessageEvent<WorkerPayload>) => {
   const post = (res: WorkerResponse) => {
     self.postMessage(res);
     return;
@@ -31,26 +31,20 @@ self.onmessage = async (
         }
 
         post({ type: "success" });
-        // self.postMessage({ type: "success" });
-
-        break;
       }
       case "saveUser": {
         const { payload: usr } = evt.data;
         await userRepo.saveUser(db, usr as User);
         self.postMessage({ type: "success" });
-        break;
       }
       case "getUsers": {
         const res = await userRepo.getUsers(db);
         post({ type: "success", data: res });
-        // break;
       }
       case "getUser": {
         const { payload: id } = evt.data;
         const res = await userRepo.getUser(db, id as string);
         self.postMessage({ type: "success", data: res });
-        break;
       }
       default: {
         throw new Error("Invalid message type");
@@ -69,31 +63,12 @@ async function connect(url: string) {
   const sqlite3 = await sqlite3InitModule({
     locateFile: (f: string) => (f === "sqlite3.wasm" ? url : f),
   });
-
-  const O = sqlite3.oo1;
-  // const opfsEnabled = !!sqlite3?.opfs?.opfsEnabled;
-  // const hasOpfsDb = !!O?.OpfsDb;
-
-  // console.log("has navigator.storage?", !!self.navigator?.storage);
-  // console.log("has getDirectory?", !!self.navigator?.storage?.getDirectory);
-  // console.log(
-  //   "vfs opfs registered?",
-  //   !!sqlite3?.capi?.sqlite3_vfs_find?.("opfs")
-  // );
-  // console.log("worker COI:", self.crossOriginIsolated);
-  // // 🔎 diagnostics to your DevTools console
-  // console.log("sqlite diagnostics:", {
-  //   // opfsEnabled,
-  //   hasOpfsDb,
-  //   hasOO1: !!O,
-  //   runtime: self.location.href,
-  // });
-  const db = new O.OpfsDb("timeturtle.sqlite");
-  setUpTables(db);
+  const db = new sqlite3.oo1.OpfsDb("timeturtle.sqlite");
+  createIfNoTables(db);
   return db;
 }
 
-function setUpTables(db: OpfsDatabase) {
+function createIfNoTables(db: OpfsDatabase) {
   db.exec(`
 PRAGMA foreign_keys=ON;
 PRAGMA journal_mode=WAL;
@@ -118,13 +93,6 @@ CREATE TABLE IF NOT EXISTS time_entries (
 CREATE INDEX IF NOT EXISTS idx_entries_user_time ON time_entries(user_id, in_time);
   `);
 }
-
-// const clientSQL = {
-//   // saveUser: async (user: User) => ),
-//   getUser: async (userId: string): Promise<User | null> =>
-//     ,
-//   getAllUsers: async (): Promise<UserDTO[]> => ,
-// };
 
 /*     // Export the SQLite file as a download
   exportDb: async (filename = "timeturtle.sqlite") => {
