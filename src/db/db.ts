@@ -1,21 +1,46 @@
 "use client";
 
+import { TimeEntry, User, UserDTO } from "../types/time-turtle";
 import { WorkerPayload } from "./db.worker";
 
-export type User = {
-  info: UserInfo;
-  time: { flags: string[]; entries: TimeEntry[] };
-};
-export type UserDTO = { id: string; name: string };
-
-export type UserInfo = { id: string; name: string; email: string };
-
-export type TimeEntry = {
-  id: string;
-  inTime: number;
-  outTime?: number;
-  sig: string;
-  flags: string[];
+export const db = {
+  init: async function () {
+    const WASM_URL = new URL(
+      "/sqlite/sqlite3.wasm",
+      window.location.origin
+    ).toString();
+    return awaitWorker({ type: "init", payload: WASM_URL });
+  },
+  saveUser: async function (usr: User): Promise<boolean> {
+    return awaitWorker<boolean>({
+      type: "saveUser",
+      payload: usr,
+    });
+  },
+  getAll: async function (): Promise<UserDTO[]> {
+    return awaitWorker<UserDTO[]>({ type: "getUsers" });
+  },
+  getUser: async function (id: string): Promise<User | null> {
+    return awaitWorker<User | null>({
+      type: "getUser",
+      payload: id,
+    });
+  },
+  saveTimeEntry: async function (te: TimeEntry, userId: string) {
+    return awaitWorker<void>({
+      type: "saveTimeEntry",
+      payload: {
+        te,
+        userId,
+      },
+    });
+  },
+  deleteUser: async function (userId: string) {
+    return awaitWorker<void>({
+      type: "deleteUser",
+      payload: userId,
+    });
+  },
 };
 
 let workerInstance: Worker | undefined;
@@ -29,7 +54,8 @@ function getWorker() {
   return workerInstance;
 }
 
-function awaitWorker<T>(w: Worker, payload: WorkerPayload): Promise<T> {
+function awaitWorker<T>(payload: WorkerPayload): Promise<T> {
+  const w = getWorker();
   return new Promise((resolve, reject) => {
     w.onmessage = (evt) => {
       const data = evt.data;
@@ -42,31 +68,6 @@ function awaitWorker<T>(w: Worker, payload: WorkerPayload): Promise<T> {
     w.postMessage(payload);
   });
 }
-
-export const db = {
-  init: async function () {
-    const WASM_URL = new URL(
-      "/sqlite/sqlite3.wasm",
-      window.location.origin
-    ).toString();
-    return awaitWorker(getWorker(), { type: "init", payload: WASM_URL });
-  },
-  saveUser: async function (usr: User): Promise<boolean> {
-    return awaitWorker<boolean>(getWorker(), {
-      type: "saveUser",
-      payload: usr,
-    });
-  },
-  getAll: async function (): Promise<UserDTO[]> {
-    return awaitWorker<UserDTO[]>(getWorker(), { type: "getUsers" });
-  },
-  getUser: async function (id: string): Promise<User | null> {
-    return awaitWorker<User | null>(getWorker(), {
-      type: "getUser",
-      payload: id,
-    });
-  },
-};
 
 // export async function openDB() {
 //   //   console.log({

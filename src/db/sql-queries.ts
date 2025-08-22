@@ -43,11 +43,11 @@ export const crudQueries = {
         INSERT INTO time_entries(id, user_id, in_time, out_time, sig, flags_json)
         VALUES(?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
-        user_id    = excluded.user_id,
-        in_time    = excluded.in_time,
-        out_time   = excluded.out_time,
-        sig        = excluded.sig,
-        flags_json = excluded.flags_json
+          in_time    = excluded.in_time,
+          out_time   = excluded.out_time,
+          sig        = excluded.sig,
+          flags_json = excluded.flags_json
+        WHERE time_entries.user_id = excluded.user_id;
         `,
   },
 
@@ -64,5 +64,9 @@ export const crudQueries = {
     WHERE user_id = ?
     ORDER BY in_time DESC
   `,
+  },
+
+  delete: {
+    user: `DELETE FROM users WHERE id = ?;`,
   },
 };

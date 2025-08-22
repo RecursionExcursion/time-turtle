@@ -1,10 +1,6 @@
 "use client";
 
-TimeTurtle.init(validator);
-
 import MainDisplay from "../../components/app/MainDisplay";
-import { TimeTurtle } from "../../lib/time-turtle";
-import { validator } from "../../service/validation-service";
 
 export default function Main() {
   return (

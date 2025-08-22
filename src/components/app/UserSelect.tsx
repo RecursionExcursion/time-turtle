@@ -1,15 +1,16 @@
 "use client";
 
 import { ChangeEvent } from "react";
-import { UserDTO } from "../../db/db";
+import { useAppContext } from "../../context/AppContext";
 
 type UserSelectProps = {
-  users: UserDTO[];
+  users: { name: string; value: string }[];
   setUserById: (id: string) => void;
 };
 
 export default function UserSelect(props: UserSelectProps) {
   const { users, setUserById } = props;
+  const { user } = useAppContext();
   return (
     <div>
       <label htmlFor="Headline">
@@ -18,6 +19,7 @@ export default function UserSelect(props: UserSelectProps) {
         </span>
 
         <select
+          value={user?.info.id ?? undefined}
           name="Headline"
           id="Headline"
           className="mt-0.5 w-full rounded border-gray-300 shadow-sm sm:text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-white"
@@ -27,7 +29,7 @@ export default function UserSelect(props: UserSelectProps) {
         >
           <option value="">Please select</option>
           {users.map((u) => (
-            <option key={u.id} value={u.id}>
+            <option key={u.value} value={u.value}>
               {u.name}
             </option>
           ))}

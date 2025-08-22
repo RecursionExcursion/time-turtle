@@ -189,12 +189,7 @@ function CreateDatePickerWithModal(props: DatePickerProps) {
           icon?: ReactNode;
         }
       ) {
-        let ico, attr;
-        if (props) {
-          const { icon, ...rest } = props;
-          ico = icon;
-          attr = rest;
-        }
+        const { icon = icons.calender, ...attr } = props ?? {};
         return (
           <button
             onClick={
@@ -214,7 +209,7 @@ function CreateDatePickerWithModal(props: DatePickerProps) {
             }
             {...attr}
           >
-            {ico ?? icons.calender}
+            {icon}
           </button>
         );
       },

@@ -1,7 +1,12 @@
-import { TimeEntryValidator } from "../lib/time-turtle";
+import { TimeEntry } from "../types/time-turtle";
 import { generateHmac, validateHmac } from "./hmac-service";
 
-export const validator: TimeEntryValidator = {
+export interface TimeEntryValidator {
+  generate: (te: TimeEntry) => Promise<string>;
+  validate: (te: TimeEntry) => Promise<boolean>;
+}
+
+export const timeValidator: TimeEntryValidator = {
   async generate(te) {
     return await generateHmac(
       JSON.stringify({

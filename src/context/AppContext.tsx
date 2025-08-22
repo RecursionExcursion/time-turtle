@@ -1,15 +1,20 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { TimeTurtle, User } from "../lib/time-turtle";
-import localRepo from "../service/client-persistence-service";
 import MainHeader from "../components/app/MainHeader";
-import { db, UserDTO } from "../db/db";
+import { db } from "../db/db";
+import { closeTimeEntry, createTimeEntry } from "../service/time-service";
+import { createNewUser, getLastOpenEntry } from "../service/user-service";
+import { TimeEntry, User, UserDTO } from "../types/time-turtle";
+import { useIsProcessing } from "../hooks/useIsProcessing";
+import { useRouter } from "next/navigation";
 
 type AppContextState = {
   user?: User;
   createUser: (name: string, email: string) => void;
+  deleteUser: () => void;
   punch: () => void;
+  isWorking: boolean;
 };
 
 export const AppContext = createContext<AppContextState>({} as AppContextState);
@@ -19,9 +24,10 @@ type AppProviderProps = {
 };
 
 export const AppProvider = (props: AppProviderProps) => {
+  const router = useRouter();
+  const { isWorking, work } = useIsProcessing();
   const [userList, setUserList] = useState<UserDTO[]>([]);
   const [user, setUser] = useState<User>();
-  const [timeTurtleData, setTimeTurtleData] = useState<TimeTurtle>();
 
   useEffect(() => {
     db.init()
@@ -29,52 +35,60 @@ export const AppProvider = (props: AppProviderProps) => {
       .then((usrs) => setUserList(usrs));
   }, []);
 
-  async function punchClock() {
-    if (!timeTurtleData || !user) return;
+  async function updateUser() {
+    if (!user) return;
 
-    const uId = user.info.id;
-
-    const copy = timeTurtleData.user.clone(user);
-    const loe = timeTurtleData.user.getLatestOpenEntry(user);
-    if (!loe) {
-      await timeTurtleData.user.createTimeEntry(uId);
-    } else {
-      await timeTurtleData.user.closeTimeEntry(uId, loe.id);
-    }
-    saveUser(copy);
+    db.getUser(user.info.id).then((u) => {
+      if (u) setUser(u);
+    });
   }
 
-  function save() {
-    if (!timeTurtleData) return;
+  async function punchClock() {
+    if (!user) return;
 
-    localRepo.save(timeTurtleData.tt);
-    setTimeTurtleData(timeTurtleData.clone());
+    work(async () => {
+      const loe = getLastOpenEntry(user);
+
+      const entry: TimeEntry = loe
+        ? await closeTimeEntry(loe)
+        : await createTimeEntry();
+
+      await db.saveTimeEntry(entry, user.info.id);
+      updateUser();
+    });
   }
 
   async function setUserById(id: string) {
     const usr = await db.getUser(id);
-    // console.log({ usr });
-
-    // const usr = timeTurtleData?.getUser(id);
     if (usr) setUser(usr);
-    else setUser(undefined)
+    else setUser(undefined);
   }
 
   function createUser(name: string, email: string) {
-    if (!timeTurtleData) return;
-
-    timeTurtleData.user.register(name, email);
-    save();
+    work(async () => {
+      const usr = createNewUser(name, email);
+      db.saveUser(usr).then(() =>
+        db.getUser(usr.info.id).then((u) => {
+          if (u) {
+            setUserList((prev) => [
+              { name: u?.info.name, id: u?.info.id },
+              ...prev,
+            ]);
+            setUser(u);
+          }
+        })
+      );
+    });
   }
 
-  function saveUser(usr: User) {
-    if (!timeTurtleData) return;
-
-    const ok = timeTurtleData.user.update(usr);
-    if (ok) {
-      save();
-      setUser(timeTurtleData.user.clone(usr));
-    }
+  function deleteUser() {
+    if (!user) return;
+    work(async () => {
+      await db.deleteUser(user.info.id);
+      const usrs = await db.getAll();
+      setUserList(usrs);
+      router.push("/main");
+    });
   }
 
   return (
@@ -83,6 +97,8 @@ export const AppProvider = (props: AppProviderProps) => {
         punch: punchClock,
         user,
         createUser,
+        isWorking,
+        deleteUser,
       }}
     >
       <div className="flex flex-col gap-5 h-screen text-white">

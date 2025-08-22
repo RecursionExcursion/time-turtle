@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import UserSelect from "./UserSelect";
-import { UserDTO } from "../../db/db";
+import { UserDTO } from "../../types/time-turtle";
 
 type MainHeaderProps = {
   users?: UserDTO[];
@@ -19,7 +19,10 @@ export default function MainHeader(props: MainHeaderProps) {
      px-6 py-4"
     >
       TIME TURTLE
-      <UserSelect users={users} setUserById={setUserById} />
+      <UserSelect
+        users={users.map((u) => ({ name: u.name, value: u.id }))}
+        setUserById={setUserById}
+      />
       <Link href={"/main/register"}>New User</Link>
     </header>
   );

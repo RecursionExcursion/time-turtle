@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { useDateRange } from "../../hooks/useDateRange";
 import TimeTableControls from "./TimeTableControls";
 import ExportImport from "./ImportExportUI";
+import Link from "next/link";
 
 export default function MainSidebar() {
   // const {} = useModal({ id: "modal" });
@@ -125,6 +126,8 @@ export default function MainSidebar() {
                 })}
                 toolTip="To"
               />
+
+              <Link href={"/main/userManager"}>Manage User</Link>
             </ul>
           </div>
         </div>

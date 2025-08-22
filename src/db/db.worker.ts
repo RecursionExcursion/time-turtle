@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import sqlite3InitModule, { OpfsDatabase } from "@sqlite.org/sqlite-wasm";
-import { User } from "./db";
 import { userRepo, UserRepoMethod } from "./user-repo";
 import {
   createTimeEntryTable,
@@ -8,6 +7,7 @@ import {
   indexes,
   pragmas,
 } from "./sql-queries";
+import { TimeEntry, User } from "../types/time-turtle";
 
 const dbName = "timeturtle.sqlite";
 
@@ -20,43 +20,24 @@ export type ResponseKey = "success" | "fail" | "error";
 export type WorkerResponse = { type: ResponseKey; data?: any };
 type WorkerErr = { type: "error"; message: string };
 
-self.onmessage = async (evt: MessageEvent<WorkerPayload>) => {
-  const post = (res: WorkerResponse) => {
-    self.postMessage(res);
-    return;
-  };
+const workerActions: Record<EventKeys, any> = {
+  init: async (url: string) => {
+    if (!db) db = await connect(url);
+  },
+  saveUser: async (usr: User): Promise<void> =>
+    await userRepo.saveUser(db, usr as User),
+  getUser: async (id: string): Promise<User | null> =>
+    await userRepo.getUser(db, id as string),
+  getUsers: async () => await userRepo.getUsers(db),
+  saveTimeEntry: async (params: { te: TimeEntry; userId: string }) =>
+    await userRepo.saveTimeEntry(db, params.te, params.userId),
+  deleteUser: async (userId: string) => await userRepo.deleteUser(db, userId),
+};
 
+self.onmessage = async (evt: MessageEvent<WorkerPayload>) => {
   try {
-    switch (evt.data.type) {
-      case "init": {
-        if (typeof evt.data.payload !== "string") {
-          throw new Error("Invalid payload");
-        }
-        if (!db) {
-          db = await connect(evt.data.payload as string);
-        }
-        post({ type: "success" });
-        break;
-      }
-      case "saveUser": {
-        const { payload: usr } = evt.data;
-        await userRepo.saveUser(db, usr as User);
-        post({ type: "success" });
-        break;
-      }
-      case "getUsers": {
-        post({ type: "success", data: await userRepo.getUsers(db) });
-      }
-      case "getUser": {
-        const { payload: id } = evt.data;
-        const res = await userRepo.getUser(db, id as string);
-        self.postMessage({ type: "success", data: res });
-        break;
-      }
-      default: {
-        throw new Error("Invalid message type");
-      }
-    }
+    const res = await workerActions[evt.data.type](evt.data.payload);
+    self.postMessage({ type: "success", data: res } as WorkerResponse);
   } catch (e: any) {
     console.log("Error in worker: " + e);
     self.postMessage({
@@ -71,11 +52,7 @@ async function connect(url: string) {
     locateFile: (f: string) => (f === "sqlite3.wasm" ? url : f),
   });
   const db = new sqlite3.oo1.OpfsDb(dbName);
-  createIfNoTables(db);
-  return db;
-}
-
-function createIfNoTables(db: OpfsDatabase) {
+  /* create table */
   db.exec(
     [
       pragmas,
@@ -84,6 +61,7 @@ function createIfNoTables(db: OpfsDatabase) {
       indexes.userTimeIndex,
     ].join("\n")
   );
+  return db;
 }
 
 //TODO
